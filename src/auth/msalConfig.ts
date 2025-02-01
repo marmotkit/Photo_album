@@ -1,11 +1,20 @@
 import { PublicClientApplication, Configuration } from "@azure/msal-browser";
 
+// 確保使用正確的重定向 URI
+const redirectUri = window.location.origin + window.location.pathname
+console.log('重定向 URI:', redirectUri)
+
+// 如果是本地開發環境，使用本地 URI
+const finalRedirectUri = process.env.NODE_ENV === 'development' 
+  ? 'http://localhost:5173'
+  : 'https://marmotkit.github.io/Photo_album/index.html'
+
 const msalConfig: Configuration = {
   auth: {
     clientId: "525d956d-b1eb-49dd-9b29-ca0d61f081a4",
     authority: "https://login.microsoftonline.com/common",
-    redirectUri: window.location.origin + window.location.pathname,
-    postLogoutRedirectUri: window.location.origin + window.location.pathname,
+    redirectUri: finalRedirectUri,
+    postLogoutRedirectUri: finalRedirectUri,
   },
   cache: {
     cacheLocation: "sessionStorage",
