@@ -1,12 +1,9 @@
-import { createApp as _createApp } from 'vue'
+import { createApp } from '@vue/runtime-dom'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from './stores/auth'
 import { initializeMsal } from './auth/msalConfig'
-
-// 使用正確的類型定義
-const createApp = _createApp
 
 // 全局錯誤處理
 window.onerror = function(msg, url, line, col, error) {
