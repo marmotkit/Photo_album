@@ -1,11 +1,11 @@
-import { createApp } from 'vue'
+import * as Vue from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from './stores/auth'
 
 // 創建應用實例
-const app = createApp(App)
+const app = Vue.createApp(App)
 
 // 創建 pinia 實例
 const pinia = createPinia()
@@ -16,12 +16,12 @@ const init = async () => {
     // 1. 先掛載 pinia
     app.use(pinia)
     
-    // 2. 初始化 auth store
+    // 2. 掛載 router
+    app.use(router)
+    
+    // 3. 初始化 auth store
     const authStore = useAuthStore()
     await authStore.initialize()
-    
-    // 3. 掛載 router
-    app.use(router)
     
     // 4. 最後掛載應用
     app.mount('#app')

@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-// 不需要任何腳本
+// 腳本內容...
 </script>
 
 <style>
