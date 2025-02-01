@@ -16,16 +16,16 @@ const isInitialized = ref(false)
 const authStore = useAuthStore()
 
 onMounted(() => {
-  // 檢查是否已經登入
-  if (authStore.isAuthenticated) {
+  // 直接監聽登入狀態變化
+  authStore.$subscribe((mutation, state) => {
+    console.log('Auth 狀態變更:', state.isAuthenticated)
     isInitialized.value = true
-  } else {
-    // 監聽登入狀態變化
-    authStore.$subscribe((mutation, state) => {
-      if (state.isAuthenticated) {
-        isInitialized.value = true
-      }
-    })
+  })
+  
+  // 如果已經登入，直接設置初始化完成
+  if (authStore.isAuthenticated) {
+    console.log('已經登入')
+    isInitialized.value = true
   }
 })
 </script>

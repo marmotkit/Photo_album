@@ -269,6 +269,7 @@ const loadCurrentFolder = async () => {
   if (!authStore.accessToken) return;
 
   try {
+    console.log('開始載入目錄')
     // 使用個人 OneDrive API 端點
     const path = currentPath.value.slice(1).join('/');
     const endpoint = path
@@ -287,24 +288,21 @@ const loadCurrentFolder = async () => {
     if (!response.ok) {
       const errorData = await response.json();
       console.error('載入失敗詳情:', JSON.stringify(errorData, null, 2));
-      console.error('Response headers:', Object.fromEntries(response.headers.entries()));
       throw new Error(`載入失敗: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('資料夾內容:', JSON.stringify(data, null, 2));
+    console.log('資料夾內容:', data);
 
-    // 儲存原始數據
-    originalFolders.value = data.value.filter((item: any) => item.folder);
-    originalPhotos.value = data.value.filter((item: any) => 
+    // 更新資料夾和照片列表
+    folders.value = data.value.filter((item: any) => item.folder);
+    photos.value = data.value.filter((item: any) => 
       item.file && 
-      item.file.mimeType && 
-      (
-        item.file.mimeType.startsWith('image/') || 
-        item.file.mimeType.startsWith('video/') ||
-        item.file.mimeType === 'application/octet-stream'
-      )
+      (item.file.mimeType.startsWith('image/') || 
+       item.file.mimeType.startsWith('video/'))
     );
+
+    console.log('載入完成:', { folders: folders.value.length, photos: photos.value.length });
 
     // 應用過濾和排序
     filterItems();
