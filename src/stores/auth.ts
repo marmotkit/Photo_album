@@ -17,7 +17,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         // 檢查 MSAL 實例
         if (!msalInstance) {
-          throw new Error('MSAL 實例未初始化')
+          throw new Error('MSAL 實例未正確載入，請重新整理頁面')
         }
 
         // 檢查是否有現有的登入狀態
