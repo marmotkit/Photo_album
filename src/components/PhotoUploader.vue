@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <!-- 在小螢幕上隱藏左側導航 -->
-    <div class="nav-tree" :class="{ 'mobile-hidden': isMobile }">
+    <div class="nav-tree" :class="{ 'mobile-hidden': isMobile && !showNav }">
       <div class="tree-header">
         <i class="fas fa-sitemap"></i>
         <span>KT的相簿</span>
@@ -115,7 +115,7 @@
               <template v-if="isMobile">
                 <button @click="openMobileUpload" class="action-btn upload-btn">
                   <i class="fas fa-camera"></i>
-                  拍照/選取
+                  選取相片
                 </button>
               </template>
               <template v-else>
@@ -137,7 +137,6 @@
                 ref="fileInput"
                 accept="image/*,video/*"
                 multiple
-                capture="environment"
                 @change="handleFileSelect"
                 class="hidden"
               />
@@ -671,20 +670,18 @@ onUnmounted(() => {
 
 const openMobileUpload = () => {
   if (isMobile.value) {
-    // 在移動端使用原生檔案選擇器，支援相機
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*,video/*';
-    input.multiple = true;
-    input.capture = 'environment'; // 允許使用相機
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*,video/*'
+    input.multiple = true
     
     input.onchange = (event) => {
-      handleFileSelect(event);
-    };
+      handleFileSelect(event)
+    }
     
-    input.click();
+    input.click()
   }
-};
+}
 </script>
 
 <style scoped>
@@ -699,13 +696,15 @@ const openMobileUpload = () => {
 }
 
 .nav-tree {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
   width: 280px;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  z-index: 1000;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
 }
 
 .tree-header {
@@ -1301,16 +1300,35 @@ const openMobileUpload = () => {
     margin: 10px;
     width: calc(100% - 20px);
   }
+
+  .nav-tree {
+    transform: translateX(-100%);
+  }
+
+  .nav-tree:not(.mobile-hidden) {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
 }
 
 .mobile-menu-btn {
-  padding: 8px;
-  background: none;
-  border: none;
-  font-size: 1.2em;
-  color: #0078d4;
-  cursor: pointer;
-  margin-bottom: 10px;
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: block;
+    padding: 8px;
+    margin: 8px;
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    color: #0078d4;
+    cursor: pointer;
+  }
 }
 
 .mobile-nav-overlay {
