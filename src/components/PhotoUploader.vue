@@ -239,7 +239,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
 
 const authStore = useAuthStore();
@@ -287,7 +287,7 @@ const loadCurrentFolder = async () => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('載入失敗詳情:', JSON.stringify(errorData, null, 2));
+      console.error('載入失敗詳情:', errorData);
       throw new Error(`載入失敗: ${response.status}`);
     }
 
@@ -295,38 +295,33 @@ const loadCurrentFolder = async () => {
     console.log('資料夾內容:', data);
 
     // 更新資料夾和照片列表
-    folders.value = data.value.filter((item: any) => item.folder);
-    photos.value = data.value.filter((item: any) => 
-      item.file && 
-      (item.file.mimeType.startsWith('image/') || 
-       item.file.mimeType.startsWith('video/'))
-    );
+    folders.value = data.value.filter((item: any) => {
+      console.log('處理項目:', item);
+      return item.folder;
+    });
 
-    console.log('載入完成:', { folders: folders.value.length, photos: photos.value.length });
+    photos.value = data.value.filter((item: any) => {
+      if (!item.file) return false;
+      
+      // 檢查 MIME 類型
+      const mimeType = item.file.mimeType;
+      console.log('檢查 MIME 類型:', item.name, mimeType);
+      
+      return mimeType && (
+        mimeType.startsWith('image/') || 
+        mimeType.startsWith('video/')
+      );
+    }).map((item: any) => ({
+      ...item,
+      thumbnailUrl: item['@microsoft.graph.downloadUrl'] || item.thumbnails?.[0]?.large?.url
+    }));
 
-    // 應用過濾和排序
-    filterItems();
-
-    // 獲取照片縮圖
-    for (const photo of photos.value) {
-      try {
-        const thumbnailResponse = await fetch(
-          `https://graph.microsoft.com/v1.0/me/drive/items/${photo.id}/thumbnails`,
-          {
-            headers: {
-              'Authorization': `Bearer ${authStore.accessToken}`,
-              'Accept': 'application/json'
-            }
-          }
-        );
-        if (thumbnailResponse.ok) {
-          const thumbnailData = await thumbnailResponse.json();
-          photo.thumbnailUrl = thumbnailData.value[0]?.medium?.url;
-        }
-      } catch (error) {
-        console.error('獲取縮圖失敗:', error);
-      }
-    }
+    console.log('載入完成:', {
+      folders: folders.value.length,
+      photos: photos.value.length,
+      folderDetails: folders.value,
+      photoDetails: photos.value
+    });
   } catch (error) {
     console.error('載入資料夾內容失敗:', error);
   }
@@ -658,7 +653,9 @@ const toggleNav = () => {
 onMounted(() => {
   checkMobile();
   window.addEventListener('resize', checkMobile);
-  loadCurrentFolder();
+  if (authStore.isAuthenticated) {
+    loadCurrentFolder();
+  }
   loadTreeStructure();
 });
 
@@ -680,6 +677,13 @@ const openMobileUpload = () => {
     input.click()
   }
 }
+
+// 監聽認證狀態變化
+watch(() => authStore.isAuthenticated, (newValue) => {
+  if (newValue) {
+    loadCurrentFolder();
+  }
+});
 </script>
 
 <style scoped>

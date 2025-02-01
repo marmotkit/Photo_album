@@ -68,7 +68,10 @@ export const useAuthStore = defineStore('auth', {
         
         this.accessToken = tokenResponse.accessToken
         this.isAuthenticated = true
-        console.log('Auth Store: Token 獲取成功')
+        console.log('Auth Store: Token 獲取成功', {
+          tokenLength: this.accessToken.length,
+          scopes: tokenResponse.scopes
+        })
       } catch (error) {
         console.error('Auth Store: 登入失敗', error)
         alert(`登入失敗！\n${error.message}`)
