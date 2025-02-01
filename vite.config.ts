@@ -4,10 +4,12 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? '/Photo_album/' : '/',
+  publicDir: 'public',
   plugins: [
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico'],
       manifest: {
         name: 'KT的相簿',
         short_name: 'KT相簿',
