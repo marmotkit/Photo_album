@@ -1,4 +1,4 @@
-import { createApp as _createApp } from 'vue'
+import { createApp } from '@vue/runtime-dom'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
@@ -21,7 +21,7 @@ window.addEventListener('unhandledrejection', function(event) {
 console.log('開始創建應用...')
 
 // 創建應用實例
-const app = _createApp(App)
+const app = createApp(App)
 const pinia = createPinia()
 
 // 掛載 pinia
