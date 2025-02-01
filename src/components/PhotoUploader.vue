@@ -1,10 +1,10 @@
 <template>
   <div class="app-container">
-    <!-- 左側導航樹 -->
-    <div class="nav-tree">
+    <!-- 在小螢幕上隱藏左側導航 -->
+    <div class="nav-tree" :class="{ 'mobile-hidden': isMobile }">
       <div class="tree-header">
         <i class="fas fa-sitemap"></i>
-        <span>檔案結構</span>
+        <span>KT的相簿</span>
       </div>
       <div class="tree-search">
         <i class="fas fa-search"></i>
@@ -35,20 +35,42 @@
     <!-- 主要內容區域 -->
     <div class="main-content">
       <div class="photo-manager">
-        <!-- 固定的頂部工具列 -->
         <div class="fixed-header">
-          <!-- 搜尋和排序工具列 -->
+          <!-- 移動端選單按鈕 -->
+          <button v-if="isMobile" 
+                  @click="toggleNav" 
+                  class="mobile-menu-btn">
+            <i class="fas fa-bars"></i>
+          </button>
+
           <div class="toolbar">
-            <div class="search-box">
-              <i class="fas fa-search"></i>
-              <input 
-                v-model="searchQuery" 
-                placeholder="搜尋檔案..."
-                class="search-input"
-                @input="filterItems"
-              >
-            </div>
             <div class="sort-controls">
+              <div class="size-control">
+                <button 
+                  class="size-btn" 
+                  :class="{ active: gridSize === 'small' }"
+                  @click="gridSize = 'small'"
+                  title="小圖示"
+                >
+                  <i class="fas fa-th" style="transform: scale(0.8);"></i>
+                </button>
+                <button 
+                  class="size-btn" 
+                  :class="{ active: gridSize === 'medium' }"
+                  @click="gridSize = 'medium'"
+                  title="中圖示"
+                >
+                  <i class="fas fa-th-large"></i>
+                </button>
+                <button 
+                  class="size-btn" 
+                  :class="{ active: gridSize === 'large' }"
+                  @click="gridSize = 'large'"
+                  title="大圖示"
+                >
+                  <i class="fas fa-th-large" style="transform: scale(1.2);"></i>
+                </button>
+              </div>
               <select v-model="sortBy" @change="sortItems" class="sort-select">
                 <option value="name">名稱</option>
                 <option value="date">日期</option>
@@ -57,6 +79,19 @@
               <button @click="toggleSortOrder" class="sort-btn">
                 <i :class="sortOrder === 'asc' ? 'fas fa-sort-alpha-down' : 'fas fa-sort-alpha-up'"></i>
               </button>
+            </div>
+          </div>
+
+          <!-- 搜尋列 -->
+          <div class="search-bar">
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input 
+                v-model="searchQuery" 
+                placeholder="搜尋檔案..."
+                class="search-input"
+                @input="filterItems"
+              >
             </div>
           </div>
 
@@ -81,6 +116,14 @@
                 <i class="fas fa-cloud-upload-alt"></i>
                 上傳媒體
               </button>
+              <button 
+                v-if="selectedItems.length > 0"
+                @click="downloadSelected" 
+                class="action-btn"
+              >
+                <i class="fas fa-download"></i>
+                下載已選項目 ({{ selectedItems.length }})
+              </button>
               <input 
                 type="file" 
                 ref="fileInput"
@@ -96,7 +139,7 @@
         <!-- 可滾動的內容區域 -->
         <div class="scrollable-content">
           <!-- 資料夾和照片列表 -->
-          <div class="content-grid">
+          <div class="content-grid" :class="gridSize">
             <!-- 資料夾 -->
             <div v-for="folder in folders" 
                  :key="folder.id" 
@@ -108,11 +151,16 @@
               <span class="folder-name">{{ folder.name }}</span>
             </div>
 
-            <!-- 照片預覽 -->
+            <!-- 媒體項目 -->
             <div v-for="media in photos" 
                  :key="media.id" 
-                 class="media-item">
+                 class="media-item"
+                 :class="{ selected: selectedItems.includes(media.id) }"
+                 @click.stop="toggleSelect(media)">
               <div class="media-wrapper">
+                <div class="select-checkbox">
+                  <i class="fas" :class="selectedItems.includes(media.id) ? 'fa-check-square' : 'fa-square'"></i>
+                </div>
                 <template v-if="isImage(media)">
                   <img :src="media.thumbnailUrl" :alt="media.name">
                 </template>
@@ -169,11 +217,21 @@
         </div>
       </div>
     </div>
+
+    <!-- 移動端導航抽屜 -->
+    <div v-if="isMobile && showNav" 
+         class="mobile-nav-overlay"
+         @click="toggleNav">
+      <div class="mobile-nav" 
+           @click.stop>
+        <!-- 複製 nav-tree 的內容 -->
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 
 const authStore = useAuthStore();
@@ -193,6 +251,10 @@ const originalPhotos = ref<any[]>([]);
 const treeSearchQuery = ref('');
 const treeItems = ref<any[]>([]);
 const filteredTreeItems = ref<any[]>([]);
+const gridSize = ref('small');
+const selectedItems = ref<string[]>([]);
+const isMobile = ref(false);
+const showNav = ref(false);
 
 // 載入當前目錄內容
 const loadCurrentFolder = async () => {
@@ -534,9 +596,68 @@ const formatDate = (dateString: string) => {
   });
 };
 
+const toggleSelect = (media: any) => {
+  const index = selectedItems.value.indexOf(media.id);
+  if (index === -1) {
+    selectedItems.value.push(media.id);
+  } else {
+    selectedItems.value.splice(index, 1);
+  }
+};
+
+const downloadSelected = async () => {
+  for (const id of selectedItems.value) {
+    const media = photos.value.find(p => p.id === id);
+    if (media) {
+      try {
+        const response = await fetch(
+          `https://graph.microsoft.com/v1.0/me/drive/items/${media.id}/content`,
+          {
+            headers: {
+              'Authorization': `Bearer ${authStore.accessToken}`
+            }
+          }
+        );
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = media.name;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }
+      } catch (error) {
+        console.error('下載失敗:', error);
+      }
+    }
+  }
+  selectedItems.value = []; // 清空選擇
+};
+
+// 檢查是否為移動設備
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768;
+};
+
+// 切換導航顯示
+const toggleNav = () => {
+  showNav.value = !showNav.value;
+};
+
+// 監聽視窗大小變化
 onMounted(() => {
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
   loadCurrentFolder();
   loadTreeStructure();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile);
 });
 </script>
 
@@ -545,8 +666,10 @@ onMounted(() => {
   display: flex;
   gap: 20px;
   padding: 20px;
-  height: calc(100vh - 40px);
+  min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   background: #f8f9fa;
+  padding-top: calc(20px + env(safe-area-inset-top));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
 }
 
 .nav-tree {
@@ -707,9 +830,19 @@ onMounted(() => {
 
 .content-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.content-grid.small {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+
+.content-grid.medium {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.content-grid.large {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 }
 
 .folder-item {
@@ -944,14 +1077,22 @@ onMounted(() => {
   border-radius: 8px;
   padding: 15px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
+}
+
+.search-bar {
+  margin-bottom: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  overflow: hidden;
 }
 
 .search-box {
   position: relative;
   flex: 1;
-  max-width: 400px;
+  max-width: 100%;
 }
 
 .search-box i {
@@ -969,6 +1110,7 @@ onMounted(() => {
   border-radius: 6px;
   font-size: 0.9em;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .search-input:focus {
@@ -1041,5 +1183,132 @@ onMounted(() => {
 .tree-content::-webkit-scrollbar-thumb:hover,
 .main-content::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+.size-control {
+  display: flex;
+  gap: 4px;
+  margin-right: 8px;
+  background: white;
+  padding: 4px;
+  border-radius: 6px;
+  border: 2px solid #dee2e6;
+}
+
+.size-btn {
+  padding: 6px 10px;
+  min-width: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.size-btn:hover {
+  background: #f8f9fa;
+  color: #0078d4;
+}
+
+.size-btn.active {
+  background: #0078d4;
+  color: white;
+}
+
+.size-btn i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
+}
+
+/* 移動端樣式 */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .mobile-hidden {
+    display: none;
+  }
+
+  .main-content {
+    width: 100%;
+  }
+
+  .content-grid.small {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  .content-grid.medium {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  .content-grid.large {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .sort-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .search-bar {
+    margin: 10px;
+    width: calc(100% - 20px);
+  }
+
+  .folder-nav {
+    margin: 10px;
+    width: calc(100% - 20px);
+  }
+}
+
+.mobile-menu-btn {
+  padding: 8px;
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  color: #0078d4;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.mobile-nav-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.mobile-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  background: white;
+  z-index: 1001;
+  padding-top: env(safe-area-inset-top);
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
 }
 </style> 
