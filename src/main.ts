@@ -1,11 +1,11 @@
-import * as Vue from 'vue'
+import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from './stores/auth'
 
 // 創建應用實例
-const app = Vue.createApp(App)
+const app = createApp(App)
 
 // 創建 pinia 實例
 const pinia = createPinia()
@@ -19,12 +19,12 @@ const init = async () => {
     // 2. 掛載 router
     app.use(router)
     
-    // 3. 初始化 auth store
+    // 3. 掛載應用
+    app.mount('#app')
+    
+    // 4. 初始化 auth store
     const authStore = useAuthStore()
     await authStore.initialize()
-    
-    // 4. 最後掛載應用
-    app.mount('#app')
   } catch (error) {
     console.error('應用初始化失敗:', error)
   }
