@@ -1,0 +1,49 @@
+# 如果你在 D:\Dev\Photo_Album，需要先進入 onedrive-album 目錄
+cd onedrive-album
+
+# 或者如果你還沒有建立專案，需要從頭開始：
+cd D:\Dev\Photo_Album
+npm create vite@latest onedrive-album -- --template vue
+cd onedrive-album
+
+# 先移除 node_modules
+rm -rf node_modules
+rm package-lock.json
+
+# 重新安裝所有依賴
+npm install
+npm install @azure/msal-browser@latest
+npm install pinia@latest
+npm install vue-router@4
+npm install -D @vitejs/plugin-vue
+npm install -D typescript
+npm install -D @types/node
+
+# 安裝其他必要的依賴
+npm install -D vite-plugin-pwa
+npm install -D @types/node
+npm install -D typescript
+npm install -D @vitejs/plugin-vue
+
+# 移除重複的安裝
+npm uninstall @types/vue vue-tsc
+
+# 安裝正確的類型定義
+npm install -D @types/node
+npm install -D vue-router
+npm install -D pinia
+npm install -D @vitejs/plugin-vue
+npm install -D vite
+
+# 建立必要的目錄結構
+New-Item -ItemType Directory -Path src\auth
+New-Item -ItemType Directory -Path src\stores
+New-Item -ItemType Directory -Path src\components
+New-Item -ItemType Directory -Path src\views
+
+npm install vue@latest
+npm run dev
+
+npm install -D @vue/tsconfig
+npm install -D @types/vue-router
+npm install -D @types/pinia 
