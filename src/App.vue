@@ -1,33 +1,17 @@
 <template>
   <div id="app">
-    <div v-if="!isInitialized" class="loading">
+    <router-view v-if="authStore.isAuthenticated"></router-view>
+    <div v-else class="loading">
       <i class="fas fa-spinner fa-spin"></i>
       載入中...
     </div>
-    <router-view v-else></router-view>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
 import { useAuthStore } from './stores/auth'
 
-const isInitialized = ref(false)
 const authStore = useAuthStore()
-
-onMounted(() => {
-  // 直接監聽登入狀態變化
-  authStore.$subscribe((mutation, state) => {
-    console.log('Auth 狀態變更:', state.isAuthenticated)
-    isInitialized.value = true
-  })
-  
-  // 如果已經登入，直接設置初始化完成
-  if (authStore.isAuthenticated) {
-    console.log('已經登入')
-    isInitialized.value = true
-  }
-})
 </script>
 
 <style>
