@@ -13,7 +13,7 @@ const msalConfig: Configuration = {
 };
 
 // 建立 MSAL 實例
-const msalInstance = new PublicClientApplication(msalConfig);
+export const msalInstance = new PublicClientApplication(msalConfig);
 
 // 初始化 MSAL 實例的函數
 export async function initializeMsal() {
@@ -26,8 +26,6 @@ export async function initializeMsal() {
     throw error;
   }
 }
-
-export { msalInstance };
 
 export const loginRequest = {
   scopes: [

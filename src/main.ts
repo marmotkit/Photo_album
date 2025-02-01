@@ -1,9 +1,9 @@
-import { createApp } from '@vue/runtime-dom'
+import { createApp as _createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useAuthStore } from './stores/auth'
-import { initializeMsal } from './auth/msalConfig'
+import { msalInstance } from './auth/msalConfig'
 
 // 全局錯誤處理
 window.onerror = function(msg, url, line, col, error) {
@@ -21,7 +21,7 @@ window.addEventListener('unhandledrejection', function(event) {
 console.log('開始創建應用...')
 
 // 創建應用實例
-const app = createApp(App)
+const app = _createApp(App)
 const pinia = createPinia()
 
 // 掛載 pinia
@@ -30,26 +30,19 @@ app.use(pinia)
 // 掛載 router
 app.use(router)
 
-// 初始化 MSAL 和 auth store
-async function initializeApp() {
-  try {
-    await initializeMsal()
-    
-    // 初始化 auth store
-    const authStore = useAuthStore()
-    console.log('開始初始化 Auth Store...')
-    
-    await authStore.initialize()
-    console.log('Auth 初始化完成，開始掛載應用')
-    
-    app.mount('#app')
-    console.log('應用掛載完成')
-  } catch (error) {
-    console.error('初始化失敗:', error)
-    alert(`初始化失敗！\n${error.message}`)
-    app.mount('#app')
-  }
-}
-
-// 啟動應用
-initializeApp() 
+// 初始化 MSAL
+msalInstance.initialize().then(() => {
+  console.log('MSAL 初始化完成')
+  
+  // 初始化 auth store
+  const authStore = useAuthStore()
+  
+  // 掛載應用
+  app.mount('#app')
+}).catch(error => {
+  console.error('MSAL 初始化失敗:', error)
+  alert(`MSAL 初始化失敗！\n${error.message}`)
+  
+  // 即使失敗也掛載應用，讓用戶可以看到錯誤信息
+  app.mount('#app')
+}) 
