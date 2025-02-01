@@ -1,6 +1,10 @@
 <template>
   <div id="app">
-    <router-view v-if="authStore.isAuthenticated"></router-view>
+    <div v-if="authStore.initializationError" class="error-message">
+      <i class="fas fa-exclamation-triangle"></i>
+      初始化失敗：{{ authStore.initializationError }}
+    </div>
+    <router-view v-else-if="authStore.isAuthenticated"></router-view>
     <div v-else class="loading">
       <i class="fas fa-spinner fa-spin"></i>
       載入中...
@@ -40,5 +44,17 @@ body {
 
 .loading i {
   color: #0078d4;
+}
+
+.error-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: #dc3545;
+  font-size: 1.2em;
+  gap: 10px;
+  padding: 20px;
+  text-align: center;
 }
 </style> 
