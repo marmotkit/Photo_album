@@ -1,28 +1,11 @@
 <template>
   <div id="app">
-    <router-view v-if="initialized"></router-view>
-    <div v-else class="loading">
-      <i class="fas fa-spinner fa-spin"></i>
-      載入中...
-    </div>
+    <router-view></router-view>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useAuthStore } from './stores/auth'
-
-const initialized = ref(false)
-const authStore = useAuthStore()
-
-onMounted(async () => {
-  try {
-    await authStore.initialize()
-    initialized.value = true
-  } catch (error) {
-    console.error('初始化失敗:', error)
-  }
-})
+// 移除 onMounted 和初始化邏輯
 </script>
 
 <style>

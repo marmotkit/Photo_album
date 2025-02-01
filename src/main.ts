@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { createApp } from '@vue/runtime-dom'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
@@ -24,7 +24,9 @@ const init = async () => {
     
     // 4. 初始化 auth store
     const authStore = useAuthStore()
-    await authStore.initialize()
+    await authStore.initialize().catch(error => {
+      console.error('Auth 初始化失敗:', error)
+    })
   } catch (error) {
     console.error('應用初始化失敗:', error)
   }

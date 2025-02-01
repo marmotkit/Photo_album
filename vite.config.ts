@@ -1,18 +1,18 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { VitePWA } from 'vite-plugin-pwa';
+import path from 'path';
 
 export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? '/Photo_album/' : '/',
   publicDir: 'public',
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
+  },
   plugins: [
-    vue({
-      template: {
-        compilerOptions: {
-          isCustomElement: (tag) => tag.includes('-')
-        }
-      }
-    }),
+    vue(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
