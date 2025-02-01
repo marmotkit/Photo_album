@@ -1,11 +1,33 @@
 <template>
   <div id="app">
-    <router-view></router-view>
+    <div v-if="!isInitialized" class="loading">
+      <i class="fas fa-spinner fa-spin"></i>
+      載入中...
+    </div>
+    <router-view v-else></router-view>
   </div>
 </template>
 
 <script setup lang="ts">
-// 移除 onMounted 和初始化邏輯
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from './stores/auth'
+
+const isInitialized = ref(false)
+const authStore = useAuthStore()
+
+onMounted(() => {
+  // 檢查是否已經登入
+  if (authStore.isAuthenticated) {
+    isInitialized.value = true
+  } else {
+    // 監聽登入狀態變化
+    authStore.$subscribe((mutation, state) => {
+      if (state.isAuthenticated) {
+        isInitialized.value = true
+      }
+    })
+  }
+})
 </script>
 
 <style>
