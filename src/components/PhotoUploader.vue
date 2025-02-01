@@ -1,113 +1,171 @@
 <template>
-  <div class="photo-manager">
-    <!-- 搜尋和排序工具列 -->
-    <div class="toolbar">
-      <div class="search-box">
+  <div class="app-container">
+    <!-- 左側導航樹 -->
+    <div class="nav-tree">
+      <div class="tree-header">
+        <i class="fas fa-sitemap"></i>
+        <span>檔案結構</span>
+      </div>
+      <div class="tree-search">
         <i class="fas fa-search"></i>
         <input 
-          v-model="searchQuery" 
-          placeholder="搜尋檔案..."
-          class="search-input"
-          @input="filterItems"
+          v-model="treeSearchQuery" 
+          placeholder="搜尋資料夾..."
+          @input="filterTreeItems"
         >
       </div>
-      <div class="sort-controls">
-        <select v-model="sortBy" @change="sortItems" class="sort-select">
-          <option value="name">名稱</option>
-          <option value="date">日期</option>
-          <option value="size">大小</option>
-        </select>
-        <button @click="toggleSortOrder" class="sort-btn">
-          <i :class="sortOrder === 'asc' ? 'fas fa-sort-alpha-down' : 'fas fa-sort-alpha-up'"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- 目錄導航 -->
-    <div class="folder-nav">
-      <div class="breadcrumb">
-        <span v-for="(folder, index) in currentPath" 
-              :key="index" 
-              @click="navigateToFolder(index)"
-              class="breadcrumb-item">
-          <i class="fas fa-home" v-if="index === 0"></i>
-          <i class="fas fa-chevron-right" v-else></i>
-          {{ folder }}
-        </span>
-      </div>
-      <button @click="showNewFolderDialog = true" class="action-btn">
-        <i class="fas fa-folder-plus"></i>
-        新增資料夾
-      </button>
-    </div>
-
-    <!-- 資料夾和照片列表 -->
-    <div class="content-grid">
-      <!-- 資料夾 -->
-      <div v-for="folder in folders" 
-           :key="folder.id" 
-           class="folder-item"
-           @click="openFolder(folder)">
-        <div class="folder-icon">
-          <i class="fas fa-folder"></i>
+      <div class="tree-content">
+        <div class="tree-item root-item" @click="navigateToRoot">
+          <i class="fas fa-hdd"></i>
+          <span>OneDrive</span>
         </div>
-        <span class="folder-name">{{ folder.name }}</span>
+        <div 
+          v-for="item in filteredTreeItems" 
+          :key="item.id"
+          class="tree-item"
+          :style="{ paddingLeft: item.level * 20 + 'px' }"
+          @click="navigateToPath(item.path)"
+        >
+          <i :class="item.expanded ? 'fas fa-folder-open' : 'fas fa-folder'"></i>
+          <span>{{ item.name }}</span>
+        </div>
       </div>
+    </div>
 
-      <!-- 照片預覽 -->
-      <div v-for="photo in photos" 
-           :key="photo.id" 
-           class="photo-item">
-        <div class="photo-wrapper">
-          <img :src="photo.thumbnailUrl" :alt="photo.name">
-          <div class="photo-overlay">
-            <span class="photo-name">{{ photo.name }}</span>
+    <!-- 主要內容區域 -->
+    <div class="main-content">
+      <div class="photo-manager">
+        <!-- 固定的頂部工具列 -->
+        <div class="fixed-header">
+          <!-- 搜尋和排序工具列 -->
+          <div class="toolbar">
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input 
+                v-model="searchQuery" 
+                placeholder="搜尋檔案..."
+                class="search-input"
+                @input="filterItems"
+              >
+            </div>
+            <div class="sort-controls">
+              <select v-model="sortBy" @change="sortItems" class="sort-select">
+                <option value="name">名稱</option>
+                <option value="date">日期</option>
+                <option value="size">大小</option>
+              </select>
+              <button @click="toggleSortOrder" class="sort-btn">
+                <i :class="sortOrder === 'asc' ? 'fas fa-sort-alpha-down' : 'fas fa-sort-alpha-up'"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 目錄導航 -->
+          <div class="folder-nav">
+            <div class="breadcrumb">
+              <span v-for="(folder, index) in currentPath" 
+                    :key="index" 
+                    @click="navigateToFolder(index)"
+                    class="breadcrumb-item">
+                <i class="fas fa-home" v-if="index === 0"></i>
+                <i class="fas fa-chevron-right" v-else></i>
+                {{ folder }}
+              </span>
+            </div>
+            <div class="action-buttons">
+              <button @click="showNewFolderDialog = true" class="action-btn">
+                <i class="fas fa-folder-plus"></i>
+                新增資料夾
+              </button>
+              <button @click="triggerFileInput" class="action-btn upload-btn">
+                <i class="fas fa-cloud-upload-alt"></i>
+                上傳媒體
+              </button>
+              <input 
+                type="file" 
+                ref="fileInput"
+                accept="image/*,video/*"
+                multiple
+                @change="handleFileSelect"
+                class="hidden"
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- 上傳按鈕 -->
-    <div class="upload-section">
-      <input 
-        type="file" 
-        ref="fileInput"
-        accept="image/*"
-        multiple
-        @change="handleFileSelect"
-        class="hidden"
-      />
-      <button @click="triggerFileInput" class="action-btn upload-btn">
-        <i class="fas fa-cloud-upload-alt"></i>
-        上傳照片
-      </button>
-    </div>
+        <!-- 可滾動的內容區域 -->
+        <div class="scrollable-content">
+          <!-- 資料夾和照片列表 -->
+          <div class="content-grid">
+            <!-- 資料夾 -->
+            <div v-for="folder in folders" 
+                 :key="folder.id" 
+                 class="folder-item"
+                 @click="openFolder(folder)">
+              <div class="folder-icon">
+                <i class="fas fa-folder"></i>
+              </div>
+              <span class="folder-name">{{ folder.name }}</span>
+            </div>
 
-    <!-- 上傳進度 -->
-    <div v-if="uploading" class="progress-overlay">
-      <div class="progress-container">
-        <div class="progress-bar" :style="{ width: progress + '%' }"></div>
-        <div class="progress-text">
-          <i class="fas fa-spinner fa-spin"></i>
-          上傳進度: {{ progress }}%
+            <!-- 照片預覽 -->
+            <div v-for="media in photos" 
+                 :key="media.id" 
+                 class="media-item">
+              <div class="media-wrapper">
+                <template v-if="isImage(media)">
+                  <img :src="media.thumbnailUrl" :alt="media.name">
+                </template>
+                <template v-else-if="isVideo(media)">
+                  <div class="video-thumbnail">
+                    <img :src="media.thumbnailUrl" :alt="media.name">
+                    <div class="video-icon">
+                      <i class="fas fa-play-circle"></i>
+                    </div>
+                  </div>
+                </template>
+                <div class="media-overlay">
+                  <div class="media-type">
+                    <i :class="isVideo(media) ? 'fas fa-video' : 'fas fa-image'"></i>
+                  </div>
+                  <span class="media-name">{{ media.name }}</span>
+                  <div class="media-info">
+                    <span>{{ formatFileSize(media.size) }}</span>
+                    <span>{{ formatDate(media.lastModifiedDateTime) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- 新增資料夾對話框 -->
-    <div v-if="showNewFolderDialog" class="dialog-overlay">
-      <div class="dialog">
-        <h3><i class="fas fa-folder-plus"></i> 新增資料夾</h3>
-        <input v-model="newFolderName" 
-               placeholder="請輸入資料夾名稱"
-               class="dialog-input">
-        <div class="dialog-buttons">
-          <button @click="createNewFolder" class="action-btn">
-            <i class="fas fa-check"></i> 確定
-          </button>
-          <button @click="showNewFolderDialog = false" class="action-btn cancel">
-            <i class="fas fa-times"></i> 取消
-          </button>
+        <!-- 上傳進度 -->
+        <div v-if="uploading" class="progress-overlay">
+          <div class="progress-container">
+            <div class="progress-bar" :style="{ width: progress + '%' }"></div>
+            <div class="progress-text">
+              <i class="fas fa-spinner fa-spin"></i>
+              上傳進度: {{ progress }}%
+            </div>
+          </div>
+        </div>
+
+        <!-- 新增資料夾對話框 -->
+        <div v-if="showNewFolderDialog" class="dialog-overlay">
+          <div class="dialog">
+            <h3><i class="fas fa-folder-plus"></i> 新增資料夾</h3>
+            <input v-model="newFolderName" 
+                   placeholder="請輸入資料夾名稱"
+                   class="dialog-input">
+            <div class="dialog-buttons">
+              <button @click="createNewFolder" class="action-btn">
+                <i class="fas fa-check"></i> 確定
+              </button>
+              <button @click="showNewFolderDialog = false" class="action-btn cancel">
+                <i class="fas fa-times"></i> 取消
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -132,6 +190,9 @@ const sortBy = ref('name');
 const sortOrder = ref('asc');
 const originalFolders = ref<any[]>([]);
 const originalPhotos = ref<any[]>([]);
+const treeSearchQuery = ref('');
+const treeItems = ref<any[]>([]);
+const filteredTreeItems = ref<any[]>([]);
 
 // 載入當前目錄內容
 const loadCurrentFolder = async () => {
@@ -170,6 +231,7 @@ const loadCurrentFolder = async () => {
       item.file.mimeType && 
       (
         item.file.mimeType.startsWith('image/') || 
+        item.file.mimeType.startsWith('video/') ||
         item.file.mimeType === 'application/octet-stream'
       )
     );
@@ -199,6 +261,39 @@ const loadCurrentFolder = async () => {
     }
   } catch (error) {
     console.error('載入資料夾內容失敗:', error);
+  }
+};
+
+// 載入樹狀結構
+const loadTreeStructure = async () => {
+  if (!authStore.accessToken) return;
+
+  try {
+    const response = await fetch('https://graph.microsoft.com/v1.0/me/drive/root/children', {
+      headers: {
+        'Authorization': `Bearer ${authStore.accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('載入資料夾結構失敗');
+    }
+
+    const data = await response.json();
+    treeItems.value = data.value
+      .filter((item: any) => item.folder)
+      .map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        path: item.name,
+        level: 1,
+        expanded: false
+      }));
+    
+    filterTreeItems();
+  } catch (error) {
+    console.error('載入資料夾結構失敗:', error);
   }
 };
 
@@ -393,17 +488,188 @@ const toggleSortOrder = () => {
   sortItems();
 };
 
-onMounted(loadCurrentFolder);
+// 過濾樹狀項目
+const filterTreeItems = () => {
+  const query = treeSearchQuery.value.toLowerCase();
+  filteredTreeItems.value = treeItems.value.filter(item =>
+    item.name.toLowerCase().includes(query)
+  );
+};
+
+// 導航到根目錄
+const navigateToRoot = async () => {
+  currentPath.value = ['OneDrive'];
+  await loadCurrentFolder();
+};
+
+// 導航到指定路徑
+const navigateToPath = async (path: string) => {
+  currentPath.value = ['OneDrive', path];
+  await loadCurrentFolder();
+};
+
+// 添加新的工具函數
+const isImage = (file: any) => {
+  return file.file.mimeType.startsWith('image/');
+};
+
+const isVideo = (file: any) => {
+  return file.file.mimeType.startsWith('video/');
+};
+
+const formatFileSize = (bytes: number) => {
+  if (!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+};
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('zh-TW', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+};
+
+onMounted(() => {
+  loadCurrentFolder();
+  loadTreeStructure();
+});
 </script>
 
 <style scoped>
-.photo-manager {
+.app-container {
+  display: flex;
+  gap: 20px;
   padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-  background: #ffffff;
-  border-radius: 8px;
+  height: calc(100vh - 40px);
+  background: #f8f9fa;
+}
+
+.nav-tree {
+  width: 280px;
+  background: white;
+  border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tree-header {
+  padding: 20px;
+  background: #0078d4;
+  color: white;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tree-search {
+  padding: 12px;
+  border-bottom: 1px solid #e9ecef;
+  position: relative;
+}
+
+.tree-search i {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+}
+
+.tree-search input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 2px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 0.9em;
+  transition: all 0.3s ease;
+}
+
+.tree-search input:focus {
+  border-color: #0078d4;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+}
+
+.tree-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0;
+}
+
+.tree-item {
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #495057;
+}
+
+.tree-item:hover {
+  background: rgba(0, 120, 212, 0.1);
+  color: #0078d4;
+}
+
+.tree-item i {
+  width: 20px;
+  color: #0078d4;
+}
+
+.root-item {
+  font-weight: 600;
+  color: #212529;
+}
+
+.main-content {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.photo-manager {
+  padding: 0;
+  max-width: none;
+  margin: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.fixed-header {
+  background: white;
+  z-index: 100;
+  padding-bottom: 15px;
+}
+
+.scrollable-content {
+  overflow-y: auto;
+  padding-top: 15px;
+  flex: 1;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.hidden {
+  display: none;
 }
 
 .folder-nav {
@@ -473,43 +739,89 @@ onMounted(loadCurrentFolder);
   color: #495057;
 }
 
-.photo-item {
+.media-item {
   position: relative;
   border-radius: 8px;
   overflow: hidden;
   aspect-ratio: 1;
+  background: #f8f9fa;
 }
 
-.photo-wrapper {
+.media-wrapper {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-.photo-wrapper img {
+.media-wrapper img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
 }
 
-.photo-overlay {
+.video-thumbnail {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.video-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3em;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.media-item:hover .video-icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.media-overlay {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.7);
+  padding: 15px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
   color: white;
   transform: translateY(100%);
   transition: transform 0.3s ease;
 }
 
-.photo-item:hover .photo-overlay {
+.media-type {
+  position: absolute;
+  top: -30px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 5px 8px;
+  border-radius: 4px;
+}
+
+.media-name {
+  font-size: 0.9em;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.media-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8em;
+  opacity: 0.8;
+}
+
+.media-item:hover .media-overlay {
   transform: translateY(0);
 }
 
-.photo-item:hover img {
+.media-item:hover img {
   transform: scale(1.05);
 }
 
@@ -627,14 +939,13 @@ onMounted(loadCurrentFolder);
 }
 
 .toolbar {
+  margin-bottom: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .search-box {
@@ -707,5 +1018,28 @@ onMounted(loadCurrentFolder);
 
 .sort-btn i {
   font-size: 1.1em;
+}
+
+/* 添加滾動條樣式 */
+.tree-content::-webkit-scrollbar,
+.main-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tree-content::-webkit-scrollbar-track,
+.main-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.tree-content::-webkit-scrollbar-thumb,
+.main-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.tree-content::-webkit-scrollbar-thumb:hover,
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 </style> 
