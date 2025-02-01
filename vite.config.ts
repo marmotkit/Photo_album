@@ -6,7 +6,13 @@ export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? '/Photo_album/' : '/',
   publicDir: 'public',
   plugins: [
-    vue(),
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag.includes('-')
+        }
+      }
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
@@ -24,8 +30,7 @@ export default defineConfig({
             src: 'icons/icon-72x72.png',
             sizes: '72x72',
             type: 'image/png'
-          },
-          // 可以添加更多尺寸的圖示
+          }
         ]
       }
     })
