@@ -9,8 +9,9 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
-// 初始化 auth store
-const authStore = useAuthStore()
-await authStore.initialize()
-
-app.mount('#app') 
+// 使用立即執行的異步函數
+(async () => {
+  const authStore = useAuthStore()
+  await authStore.initialize()
+  app.mount('#app')
+})() 

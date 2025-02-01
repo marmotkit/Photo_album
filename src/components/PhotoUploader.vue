@@ -112,10 +112,18 @@
                 <i class="fas fa-folder-plus"></i>
                 新增資料夾
               </button>
-              <button @click="triggerFileInput" class="action-btn upload-btn">
-                <i class="fas fa-cloud-upload-alt"></i>
-                上傳媒體
-              </button>
+              <template v-if="isMobile">
+                <button @click="openMobileUpload" class="action-btn upload-btn">
+                  <i class="fas fa-camera"></i>
+                  拍照/選取
+                </button>
+              </template>
+              <template v-else>
+                <button @click="triggerFileInput" class="action-btn upload-btn">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  上傳媒體
+                </button>
+              </template>
               <button 
                 v-if="selectedItems.length > 0"
                 @click="downloadSelected" 
@@ -129,6 +137,7 @@
                 ref="fileInput"
                 accept="image/*,video/*"
                 multiple
+                capture="environment"
                 @change="handleFileSelect"
                 class="hidden"
               />
@@ -659,6 +668,23 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile);
 });
+
+const openMobileUpload = () => {
+  if (isMobile.value) {
+    // 在移動端使用原生檔案選擇器，支援相機
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/*';
+    input.multiple = true;
+    input.capture = 'environment'; // 允許使用相機
+    
+    input.onchange = (event) => {
+      handleFileSelect(event);
+    };
+    
+    input.click();
+  }
+};
 </script>
 
 <style scoped>

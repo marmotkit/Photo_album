@@ -12,9 +12,10 @@ const msalConfig: Configuration = {
   }
 };
 
-// 建立並初始化 MSAL 實例
+// 建立 MSAL 實例
 const msalInstance = new PublicClientApplication(msalConfig);
-await msalInstance.initialize();
+// 初始化移到 main.ts
+msalInstance.initialize();
 
 export { msalInstance };
 
